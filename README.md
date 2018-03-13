@@ -10,6 +10,13 @@ I use it in Elasticsearch Services.
 brew install jq
 brew install go
 go install github.com/smartystreets/go-aws-auth
+
+mkdir ~/bin
+export PATH=$PATH:~/bin
+
+git clone git@github.com:hixi-hyi/aws-bin.git /tmp/aws-bin
+cp /tmp/aws-bin/assume-role-env ~/bin
+cp /tmp/aws-bin/sigv4-request.go ~/bin
 ```
 
 # usage
