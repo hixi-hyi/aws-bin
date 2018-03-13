@@ -1,0 +1,49 @@
+#!/bin/bash
+usage_exit() {
+  echo "Usage: $0 -p profile" 1>&2
+  echo " Options: "
+  echo "  profile - ~/.aws/config profile"
+  exit 1
+}
+
+PROFILE=${AWS_PROFILE}
+
+while getopts hp:s: OPT
+do
+  case $OPT in
+    p)
+      PROFILE=${OPTARG}
+      ;;
+    h)
+      usage_exit
+      ;;
+    \?)
+      usage_exit
+      ;;
+  esac
+done
+
+shift $((OPTIND - 1))
+
+if [ -z "${PROFILE+x}" ]; then
+    echo "profile is required."
+    usage_exit
+fi
+
+eval `sed -e 's/[[:space:]]*\=[[:space:]]*/=/g' -e 's/;.*$//' -e 's/[[:space:]]*$//' -e 's/^[[:space:]]*//' -e "s/^\(.*\)=\([^\"']*\)$/\1=\"\2\"/" < ~/.aws/config \
+| sed -n -e "/^\[profile ${PROFILE}\]/,/^\s*\[/{/^[^;].*\=.*/p;}"`
+
+if [ -z "${role_arn+x}" ]; then
+    echo "not resolve profile:" $PROFILE
+    exit 1
+fi
+if [ -z "${source_profile+x}" ]; then
+    echo "not resolve profile:" $PROFILE
+    exit 1
+fi
+
+cred=$(aws sts assume-role --role-arn ${role_arn} --role-session-name temporary --profile ${source_profile} | jq -r .Credentials)
+
+AWS_ACCESS_KEY_ID=$(echo $cred | jq -r .AccessKeyId) \
+AWS_SECRET_ACCESS_KEY=$(echo $cred | jq -r .SecretAccessKey) \
+AWS_SESSION_TOKEN=$(echo $cred | jq -r .SessionToken) \
